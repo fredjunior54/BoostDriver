@@ -9,6 +9,14 @@ Before implementing or modifying any Jetpack Compose UI:
    without updating the design system.
 5. Validate visual changes using the Android Emulator.
 
+## Local Android test cleanup
+
+At the end of each iteration, even if verification fails:
+
+1. Close any Android emulator started for the task unless the user asks to keep it running. Verify the emulator serial with `adb devices -l`, then target it explicitly with `adb -s <emulator-serial> emu kill`. Leave physical devices and pre-existing emulators alone.
+2. For one-off or isolated Gradle builds, prefer `--no-daemon`. If a dedicated Gradle user home was used with daemons enabled, run `./gradlew --stop` with the same `GRADLE_USER_HOME`, `JAVA_HOME`, and Gradle version after the build finishes. For a shared Gradle user home, stop daemons only with the user's approval.
+3. Confirm the task's emulator and idle Gradle daemons have exited. Do not kill Java processes by name or interrupt unrelated builds.
+
 ## Version bump, commit, and push
 
 `version.properties` is the single source of truth for the app version. Gradle reads it directly.
