@@ -28,7 +28,7 @@ The full-screen interface keeps both controls visible and follows the system lig
 
 ## 📦 Distribution
 
-BoostDriver is being prepared for inclusion in the official F-Droid catalog. It is not yet available there.
+BoostDriver has been submitted to the official F-Droid catalog and is not yet available there. Follow the [F-Droid packaging merge request](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/58349) for updates.
 
 ## 🔊 Compatibility and permissions
 
