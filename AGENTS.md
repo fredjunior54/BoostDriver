@@ -36,6 +36,6 @@ A push to `main` that changes `version.properties` triggers the release workflow
 
 ### Local release signing
 
-For local signing on `shadowBox`, use the existing BoostDriver keystore at `/home/antrax/ansible-Arch-Linux/android-signing/release.p12` (alias `boostdriver`). The password file is `release-password` in the same directory. Read the password directly from that file without printing it. Never copy either file into this repository or include it in logs or release assets.
+For local signing, use `$ANDROID_SIGNING_DIR/release.p12` (alias `boostdriver`) and read the password directly from `$ANDROID_SIGNING_DIR/release-password` without printing it. Keep the variable's value and both files out of this repository, logs, and release assets.
 
-This path is for local signing only. GitHub Actions uses repository secrets, and the version bump script does not read signing files.
+`ANDROID_SIGNING_DIR` is only for local signing. GitHub Actions uses repository secrets, and the version bump script does not read signing files.
