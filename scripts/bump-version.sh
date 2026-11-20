@@ -25,7 +25,15 @@ code=${BASH_REMATCH[1]}
 (( code <= 2100000000 )) || die 'versionCode exceeds the Google Play limit'
 [[ $(grep -oF -- "$marker" "$readme" | wc -l || true) -eq 1 &&
    $(grep -oF -- "$end_marker" "$readme" | wc -l || true) -eq 1 ]] || die 'expected exactly one README marker pair'
-grep -Fxq -- "$marker **Version:** v$name $end_marker" "$readme" || die 'README version does not match version.properties'
+version_line() {
+    printf '<p align="center"><strong>Version:</strong> v%s</p>' "$1"
+}
+current_line=$(version_line "$name")
+awk -v start="$marker" -v version="$current_line" -v end="$end_marker" '
+    previous == start && $0 == version { getline; if ($0 == end) found = 1 }
+    { previous = $0 }
+    END { exit !found }
+' "$readme" || die 'README version block does not match version.properties'
 if [[ ${1-} == --check ]]; then
     printf 'Version metadata is in sync: %s (versionCode %s).\n' "$name" "$code"
     exit 0
@@ -42,8 +50,10 @@ readme_tmp=
 trap 'rm -f -- "$version_tmp" ${readme_tmp:+"$readme_tmp"}' EXIT
 readme_tmp=$(mktemp -- "$root/.README.md.XXXXXX")
 printf 'versionName=%s\nversionCode=%s\n' "$next_name" "$next_code" > "$version_tmp"
-awk -v old="$marker **Version:** v$name $end_marker" -v new="$marker **Version:** v$next_name $end_marker" \
-    '$0 == old {$0 = new} {print}' "$readme" > "$readme_tmp"
+awk -v start="$marker" -v new="$(version_line "$next_name")" '
+    previous == start { $0 = new }
+    { print; previous = $0 }
+' "$readme" > "$readme_tmp"
 chmod --reference="$file" "$version_tmp"
 chmod --reference="$readme" "$readme_tmp"
 mv -f -- "$version_tmp" "$file"

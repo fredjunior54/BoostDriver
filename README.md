@@ -1,10 +1,16 @@
-# BoostDriver
+<p align="center">
+  <img src="assets/branding/logo.png" alt="BoostDriver logo" width="160">
+</p>
 
-<!-- app-version --> **Version:** v1.0.2 <!-- /app-version -->
+<h1 align="center">BoostDriver</h1>
 
-Audio booster for Android 6.0 and later, inspired by Volume Booster GOODEV. Built with Kotlin, Jetpack Compose, and Material 3. **No ads, telemetry, or internet access.**
+<!-- app-version -->
+<p align="center"><strong>Version:</strong> v1.0.2</p>
+<!-- /app-version -->
 
 ## 🎚️ How to use
+
+Audio booster for Android 6.0 and later, inspired by Volume Booster GOODEV. Built with Kotlin, Jetpack Compose, and Material 3. **No ads, telemetry, or internet access.**
 
 The full-screen interface keeps both controls visible and follows the system light or dark theme.
 
