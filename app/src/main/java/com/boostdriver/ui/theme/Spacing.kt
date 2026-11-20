@@ -17,6 +17,7 @@ class Spacing internal constructor() {
     val gutter = 40.dp
     val touchTarget = 48.dp
     val row = 56.dp
+    val brandLogo = 112.dp
 }
 
 internal val LocalSpacing = staticCompositionLocalOf { Spacing() }

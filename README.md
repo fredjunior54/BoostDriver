@@ -5,7 +5,7 @@
 <h1 align="center">BoostDriver</h1>
 
 <!-- app-version -->
-<p align="center"><strong>Version:</strong> v1.0.2</p>
+<p align="center"><strong>Version:</strong> v1.0.3</p>
 <!-- /app-version -->
 
 ## 🎚️ How to use

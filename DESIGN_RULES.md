@@ -12,7 +12,7 @@
 - Color: fixed HCT Tonal Spot palettes generated from `#2355A5` at contrast level `0.25`; follow the system light/dark setting.
 - Typography: the system Roboto family, declared in `Type.kt` for API 23 compatibility with no font download. Seven Material 3 sizes across the semantic roles.
 - Shapes: the Material You corner scale in `Shape.kt`. Use the native Material button shape.
-- Spacing: use `MaterialTheme.spacing`; the full-screen layout follows a 4 dp grid and interactive targets are at least 48 dp.
+- Spacing: use `MaterialTheme.spacing`; the full-screen layout follows a 4 dp grid and interactive targets are at least 48 dp. The main-screen logo uses the 112 dp `brandLogo` size.
 - Motion: use built-in Material transitions and platform back behavior. Any custom transition must use named tokens and convey state. Do not add ornamental motion.
 
 ## Prohibited patterns

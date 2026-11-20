@@ -67,7 +67,7 @@ internal fun BoostPanel(
         ) {
             Image(
                 painterResource(R.drawable.boost_logo), contentDescription = null,
-                modifier = Modifier.align(Alignment.CenterHorizontally).size(spacing.row),
+                modifier = Modifier.align(Alignment.CenterHorizontally).size(spacing.brandLogo),
             )
             Text(
                 stringResource(R.string.app_title, stringResource(R.string.app_name), BuildConfig.VERSION_NAME),
