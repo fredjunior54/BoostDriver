@@ -15,7 +15,8 @@ internal object BoostPrefs {
 
     fun get(context: Context): SharedPreferences = context.getSharedPreferences("boost", Context.MODE_PRIVATE)
 
-    fun limit(prefs: SharedPreferences): Int = prefs.getInt(LIMIT, 40).coerceIn(10, 60)
+    fun limit(prefs: SharedPreferences): Int =
+        if (BuildConfig.AUDIO_CALIBRATION) 100 else prefs.getInt(LIMIT, 40).coerceIn(10, 60)
 
     fun selected(prefs: SharedPreferences): Int {
         val saved = if (prefs.contains(SELECTION)) prefs.getInt(SELECTION, DEFAULT_GAIN) else null

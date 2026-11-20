@@ -50,12 +50,19 @@ internal class BoostEngine(
     }
 
     companion object {
-        private const val MAX_CALIBRATION_MB = 2250
+        private const val MAX_CALIBRATION_MB = 2587
+        const val CONFIRM_CALIBRATION_ABOVE_MB = 600
 
         fun millibels(percent: Int): Int = targetFor(percent, BuildConfig.AUDIO_CALIBRATION)
 
         fun targetFor(percent: Int, calibration: Boolean): Int =
-            if (calibration) percent.coerceIn(0, 40) * 30 else percent.coerceIn(0, 60) * 750 / 100
+            if (!calibration) {
+                percent.coerceIn(0, 60) * 750 / 100
+            } else if (percent <= 40) {
+                percent.coerceAtLeast(0) * 30
+            } else {
+                1200 + (percent.coerceAtMost(80) - 40) * (MAX_CALIBRATION_MB - 1200) / 40
+            }
 
         @Suppress("DEPRECATION") // Session zero is the legacy output mix.
         fun platformEffect(

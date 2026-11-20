@@ -38,13 +38,14 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import com.boostdriver.BoostService
+import com.boostdriver.BuildConfig
 import com.boostdriver.R
 import com.boostdriver.ui.theme.spacing
 import com.boostdriver.audio.BoostEngine
 import kotlin.math.roundToInt
 
 internal data class MediaVolume(val min: Int = 0, val max: Int = 0, val current: Int = 0)
-private enum class Dialog { None, Warning, Settings, Limit, HigherLimit, Boot }
+private enum class Dialog { None, Warning, ConfirmCalibrationEnable, ConfirmCalibrationChange, Settings, Limit, HigherLimit, Boot }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -73,6 +74,7 @@ internal fun BoostPanel(
     var dialog by rememberSaveable { mutableStateOf(Dialog.None) }
     var proposedGain by rememberSaveable { mutableStateOf<Float?>(null) }
     var pendingLimit by rememberSaveable { mutableStateOf(limit) }
+    var pendingCalibrationGain by rememberSaveable { mutableStateOf(0) }
     val spacing = MaterialTheme.spacing
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -100,8 +102,12 @@ internal fun BoostPanel(
                 onFinished = {
                     val gain = proposedGain?.roundToInt() ?: selectedGain
                     proposedGain = null
-                    onGain(gain)
+                    if (status.enabled && needsCalibrationConfirmation(gain) && gain > status.gain) {
+                        pendingCalibrationGain = gain
+                        dialog = Dialog.ConfirmCalibrationChange
+                    } else onGain(gain)
                 })
+            if (BuildConfig.AUDIO_CALIBRATION) Text(stringResource(R.string.calibration_cap))
             val message = when {
                 status.error != 0 -> stringResource(status.error)
                 status.starting -> stringResource(R.string.status_starting)
@@ -125,6 +131,10 @@ internal fun BoostPanel(
                     onClick = {
                         when {
                             canDisable -> onDisable()
+                            needsCalibrationConfirmation(selectedGain) -> {
+                                pendingCalibrationGain = selectedGain
+                                dialog = Dialog.ConfirmCalibrationEnable
+                            }
                             hasAcceptedWarning() -> onEnable()
                             else -> dialog = Dialog.Warning
                         }
@@ -139,6 +149,20 @@ internal fun BoostPanel(
             Dialog.None -> Unit
             Dialog.Warning -> ConfirmDialog(R.string.warning_title, stringResource(R.string.warning),
                 onCancel = { dialog = Dialog.None }, onConfirm = { dialog = Dialog.None; onWarningAccepted() })
+            Dialog.ConfirmCalibrationEnable, Dialog.ConfirmCalibrationChange -> {
+                val enabling = dialog == Dialog.ConfirmCalibrationEnable
+                ConfirmDialog(
+                    R.string.warning_title,
+                    stringResource(R.string.calibration_warning, BoostEngine.millibels(pendingCalibrationGain) / 100f),
+                    onCancel = { dialog = Dialog.None },
+                    onConfirm = {
+                        dialog = Dialog.None
+                        if (enabling) {
+                            if (hasAcceptedWarning()) onEnable() else onWarningAccepted()
+                        } else onGain(pendingCalibrationGain)
+                    },
+                )
+            }
             Dialog.Boot -> ConfirmDialog(R.string.boot, stringResource(R.string.boot_warning),
                 onCancel = { dialog = Dialog.Settings }, onConfirm = { onResumeOnBoot(true); dialog = Dialog.Settings })
             Dialog.HigherLimit -> ConfirmDialog(R.string.warning_title, stringResource(R.string.limit_warning, 40),
@@ -149,9 +173,13 @@ internal fun BoostPanel(
                 text = {
                     Column(Modifier.verticalScroll(rememberScrollState())) {
                         SettingSwitch(R.string.show_volume, showVolume, onShowVolume)
-                        SettingSwitch(R.string.boot, resumeOnBoot) { if (it) dialog = Dialog.Boot else onResumeOnBoot(false) }
+                        if (!BuildConfig.AUDIO_CALIBRATION) {
+                            SettingSwitch(R.string.boot, resumeOnBoot) { if (it) dialog = Dialog.Boot else onResumeOnBoot(false) }
+                        }
                         if (supportsWallpaperColors) SettingSwitch(R.string.wallpaper_colors, wallpaperColors, onWallpaperColors)
-                        TextButton(onClick = { dialog = Dialog.Limit }) { Text(stringResource(R.string.limit, limit)) }
+                        if (!BuildConfig.AUDIO_CALIBRATION) {
+                            TextButton(onClick = { dialog = Dialog.Limit }) { Text(stringResource(R.string.limit, limit)) }
+                        }
                     }
                 },
                 confirmButton = { TextButton(onClick = { dialog = Dialog.None }) { Text(stringResource(R.string.done)) } },
@@ -234,3 +262,6 @@ private fun RadioButtonRow(choice: Int, limit: Int, onSelect: () -> Unit) {
         Text(stringResource(R.string.limit_value, choice))
     }
 }
+
+private fun needsCalibrationConfirmation(gain: Int): Boolean =
+    BuildConfig.AUDIO_CALIBRATION && BoostEngine.millibels(gain) > BoostEngine.CONFIRM_CALIBRATION_ABOVE_MB

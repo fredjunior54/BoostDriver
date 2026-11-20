@@ -29,4 +29,6 @@
     <string name="limit_value">%1$d%%</string>
     <string name="limit_warning">Gain above %1$d%% increases the risk of hearing and speaker damage. No level is guaranteed safe.</string>
     <string name="channel">Audio boost</string>
+    <string name="calibration_cap">The target stays at +25.87 dB from 80% to 100%.</string>
+    <string name="calibration_warning">The +%1$.2f dB target can make audio suddenly louder, distort playback, or damage hearing and speakers. Turn media volume down and remove headphones before continuing.</string>
 </resources>

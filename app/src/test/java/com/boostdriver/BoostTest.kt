@@ -66,17 +66,19 @@ class BoostTest {
             assertEquals(1, engine.applyTarget(1125))
             assertEquals(1, engine.applyTarget(Int.MAX_VALUE))
             assertEquals(0, engine.applyTarget(-1))
-            assertEquals(listOf(150, 562, 1125, 2250), targets)
+            assertEquals(listOf(150, 562, 1125, 2587), targets)
         }
     }
 
-    @Test fun calibrationTargetsAreMonotonicAndCappedAtTwelveDecibels() {
-        val targets = (-1..61).map { BoostEngine.targetFor(it, calibration = true) }
+    @Test fun calibrationTargetsAreMonotonicAndMatchesReferenceAtEighty() {
+        val targets = (-1..101).map { BoostEngine.targetFor(it, calibration = true) }
         assertTrue(targets.zipWithNext().all { (previous, next) -> previous <= next })
         assertEquals(0, targets.first())
         assertEquals(600, BoostEngine.targetFor(20, calibration = true))
         assertEquals(1200, BoostEngine.targetFor(40, calibration = true))
-        assertEquals(1200, targets.last())
+        assertEquals(2587, BoostEngine.targetFor(80, calibration = true))
+        assertEquals(2587, BoostEngine.targetFor(100, calibration = true))
+        assertEquals(2587, targets.last())
     }
 
     @Test fun bootRequiresConsentAndRespectsLimit() {
