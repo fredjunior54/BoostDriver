@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/branding/logo.png" alt="BoostDriver logo" width="160">
+  <img src="assets/branding/logo.png" alt="BoostDriver logo" width="260">
 </p>
 
 <h1 align="center">BoostDriver</h1>
