@@ -1,0 +1,9 @@
+style:
+  active: true
+  ForbiddenComment:
+    active: true
+    comments:
+      - reason: 'Do not ship placeholder copy.'
+        value: '(?i)lorem ipsum'
+  WildcardImport:
+    active: true
