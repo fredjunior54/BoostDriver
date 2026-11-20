@@ -62,7 +62,7 @@ class BoostService : Service() {
                 AudioEffect.ACTION_CLOSE_AUDIO_EFFECT_CONTROL_SESSION -> sessions.close(session, owner)
                 else -> false
             }
-            if (changed && state.value.gain > 0 && requests.accepts(appliedGeneration)) applyGain(state.value.gain)
+            if (changed && state.value.scoped && state.value.gain > 0 && requests.accepts(appliedGeneration)) applyGain(state.value.gain)
         }
     }
 
@@ -89,12 +89,9 @@ class BoostService : Service() {
         if (!requests.wanted) {
             finishBoost(state.value.error)
         } else if (intent != null && requests.accepts(intent.getLongExtra(REQUEST, -1))) {
-            val prefs = BoostPrefs.get(this)
-            if (prefs.getBoolean(BoostPrefs.ACCEPTED, false)) {
-                appliedGeneration = requests.generation
-                listen()
-                applyGain(intent.getIntExtra(GAIN, 0).coerceIn(0, BoostPrefs.limit(prefs)))
-            } else finishBoost()
+            appliedGeneration = requests.generation
+            listen()
+            applyGain(intent.getIntExtra(GAIN, 0).coerceIn(0, BoostPrefs.MAX_GAIN))
         }
         return START_NOT_STICKY
     }
@@ -163,17 +160,21 @@ class BoostService : Service() {
         if (gain == 0) {
             releaseEffects()
         } else {
-            val targets = if (BuildConfig.AUDIO_CALIBRATION) emptySet() else sessions.ids
+            val targets = sessions.ids
             effects.keys.toList().filter { it != 0 && it !in targets }.forEach { effects.remove(it)?.close() }
-            if (targets.isNotEmpty()) effects.remove(0)?.close()
-            for (session in targets) {
-                val result = effectFor(session).apply(gain)
-                if (result != 0) {
-                    if (mode == 0 || result == 1) mode = result
-                    scoped = true
-                } else effects.remove(session)?.close()
+            if (effects.keys.none { it != 0 }) {
+                mode = effectFor(0).apply(gain)
+                if (mode == 0) effects.remove(0)?.close()
             }
-            if (!scoped) mode = effectFor(0).apply(gain)
+            if (mode == 0) {
+                for (session in targets) {
+                    val result = effectFor(session).apply(gain)
+                    if (result != 0) {
+                        if (mode == 0 || result == 1) mode = result
+                        scoped = true
+                    } else effects.remove(session)?.close()
+                }
+            }
             if (mode == 0) {
                 finishBoost(R.string.status_error)
                 return
@@ -184,7 +185,7 @@ class BoostService : Service() {
             Log.d(TAG, "Configured gain=${BoostEngine.millibels(gain)} mB backend=$mode scope=$scoped")
         }
         val prefs = BoostPrefs.get(this)
-        if (gain > 0 && !BuildConfig.AUDIO_CALIBRATION) prefs.edit().putInt(BoostPrefs.RESUME, gain).apply()
+        if (gain > 0) prefs.edit().putInt(BoostPrefs.RESUME, gain).apply()
         else prefs.edit().remove(BoostPrefs.RESUME).apply()
         state.value = Status(gain = gain, mode = mode, enabled = true, scoped = scoped)
         notifications.notify(ID, notification())

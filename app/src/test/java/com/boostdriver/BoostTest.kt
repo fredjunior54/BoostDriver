@@ -10,11 +10,11 @@ import org.junit.Test
 
 class BoostTest {
     @Test fun selectionDefaultsToTwentyAndPreservesExplicitZero() {
-        assertEquals(20, BoostPrefs.resolveSelection(null, 0, 40))
-        assertEquals(30, BoostPrefs.resolveSelection(null, 30, 40))
-        assertEquals(0, BoostPrefs.resolveSelection(0, 30, 40))
-        assertEquals(10, BoostPrefs.resolveSelection(40, 0, 10))
-        assertEquals(10, BoostPrefs.resolveSelection(null, 0, 10))
+        assertEquals(20, BoostPrefs.resolveSelection(null, 0))
+        assertEquals(30, BoostPrefs.resolveSelection(null, 30))
+        assertEquals(0, BoostPrefs.resolveSelection(0, 30))
+        assertEquals(100, BoostPrefs.resolveSelection(120, 0))
+        assertEquals(80, BoostPrefs.resolveSelection(80, 0))
     }
 
     @Test fun disabledChangesDoNotStartAndStaleRequestsCannotEnable() {
@@ -48,9 +48,9 @@ class BoostTest {
     }
 
     @Test fun gainConversionIsBounded() {
-        assertEquals(0, BoostEngine.targetFor(-10, calibration = false))
-        assertEquals(300, BoostEngine.targetFor(40, calibration = false))
-        assertEquals(450, BoostEngine.targetFor(100, calibration = false))
+        assertEquals(0, BoostEngine.millibels(-10))
+        assertEquals(1200, BoostEngine.millibels(40))
+        assertEquals(2587, BoostEngine.millibels(100))
     }
 
     @Test fun explicitCalibrationTargetIsBoundedAndDoesNotChangeTheSliderCurve() {
@@ -71,21 +71,21 @@ class BoostTest {
     }
 
     @Test fun calibrationTargetsAreMonotonicAndMatchesReferenceAtEighty() {
-        val targets = (-1..101).map { BoostEngine.targetFor(it, calibration = true) }
+        val targets = (-1..101).map { BoostEngine.millibels(it) }
         assertTrue(targets.zipWithNext().all { (previous, next) -> previous <= next })
         assertEquals(0, targets.first())
-        assertEquals(600, BoostEngine.targetFor(20, calibration = true))
-        assertEquals(1200, BoostEngine.targetFor(40, calibration = true))
-        assertEquals(2587, BoostEngine.targetFor(80, calibration = true))
-        assertEquals(2587, BoostEngine.targetFor(100, calibration = true))
+        assertEquals(600, BoostEngine.millibels(20))
+        assertEquals(1200, BoostEngine.millibels(40))
+        assertEquals(2587, BoostEngine.millibels(80))
+        assertEquals(2587, BoostEngine.millibels(100))
         assertEquals(2587, targets.last())
     }
 
-    @Test fun bootRequiresConsentAndRespectsLimit() {
-        assertEquals(0, BoostPrefs.bootGain(false, true, 40, 40))
-        assertEquals(0, BoostPrefs.bootGain(true, false, 40, 40))
-        assertEquals(0, BoostPrefs.bootGain(true, true, 0, 40))
-        assertEquals(20, BoostPrefs.bootGain(true, true, 40, 20))
+    @Test fun bootRequiresOptInAndANewlyArmedGain() {
+        assertEquals(0, BoostPrefs.bootGain(false, 40, 40))
+        assertEquals(0, BoostPrefs.bootGain(true, 0, 80))
+        assertEquals(0, BoostPrefs.bootGain(true, 40, 0))
+        assertEquals(80, BoostPrefs.bootGain(true, 80, 80))
     }
 
     @Test fun fallbackAndZeroReleaseBothEffects() {

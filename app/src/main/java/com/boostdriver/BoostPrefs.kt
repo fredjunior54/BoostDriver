@@ -4,30 +4,32 @@ import android.content.Context
 import android.content.SharedPreferences
 
 internal object BoostPrefs {
-    const val LIMIT = "limit"
-    const val ACCEPTED = "accepted"
     const val BOOT = "boot"
     const val SELECTION = "selected_gain"
     const val DEFAULT_GAIN = 20
+    const val MAX_GAIN = 100
     const val RESUME = "resume"
     const val VOLUME = "show_volume"
     const val WALLPAPER = "wallpaper_colors"
+    const val NOTIFICATIONS_ASKED = "notifications_asked"
+    private const val SCALE = "gain_scale"
+    private const val CURRENT_SCALE = 1
 
-    fun get(context: Context): SharedPreferences = context.getSharedPreferences("boost", Context.MODE_PRIVATE)
+    fun get(context: Context): SharedPreferences =
+        context.getSharedPreferences("boost", Context.MODE_PRIVATE).also(::migrate)
 
-    fun limit(prefs: SharedPreferences): Int =
-        if (BuildConfig.AUDIO_CALIBRATION) 100 else prefs.getInt(LIMIT, 40).coerceIn(10, 60)
-
-    fun selected(prefs: SharedPreferences): Int {
-        val saved = if (prefs.contains(SELECTION)) prefs.getInt(SELECTION, DEFAULT_GAIN) else null
-        return resolveSelection(saved, prefs.getInt(RESUME, 0), limit(prefs)).also {
-            if (saved != it) prefs.edit().putInt(SELECTION, it).apply()
-        }
+    private fun migrate(prefs: SharedPreferences) {
+        if (prefs.getInt(SCALE, 0) == CURRENT_SCALE) return
+        val selection = resolveSelection(prefs.all[SELECTION] as? Int, prefs.getInt(RESUME, 0))
+        prefs.edit().putInt(SELECTION, selection).putInt(SCALE, CURRENT_SCALE)
+            .remove(RESUME).remove("limit").remove("accepted").apply()
     }
 
-    fun resolveSelection(saved: Int?, legacy: Int, limit: Int): Int =
-        (saved ?: legacy.takeIf { it in 1..60 } ?: DEFAULT_GAIN).coerceIn(0, limit)
+    fun selected(prefs: SharedPreferences): Int = resolveSelection(prefs.getInt(SELECTION, DEFAULT_GAIN), 0)
 
-    fun bootGain(accepted: Boolean, boot: Boolean, gain: Int, limit: Int): Int =
-        if (accepted && boot) gain.coerceIn(0, limit) else 0
+    fun resolveSelection(saved: Int?, legacy: Int): Int =
+        (saved ?: legacy.takeIf { it in 1..MAX_GAIN } ?: DEFAULT_GAIN).coerceIn(0, MAX_GAIN)
+
+    fun bootGain(boot: Boolean, armed: Int, selected: Int): Int =
+        if (boot && armed > 0) selected.coerceIn(0, MAX_GAIN) else 0
 }

@@ -15,8 +15,6 @@
     <string name="status_session">Playback session effect configured (%1$s).</string>
     <string name="gain_target">Gain: %1$d%% · +%2$.2f dB target</string>
     <string name="settings">Settings</string>
-    <string name="warning_title">Protect your hearing</string>
-    <string name="warning">High volume can damage your hearing and speakers. Start with low volume. Even a small boost can cause distortion.</string>
     <string name="accept">I understand</string>
     <string name="cancel">Cancel</string>
     <string name="done">Done</string>
@@ -24,11 +22,6 @@
     <string name="boot">Resume boost after restart</string>
     <string name="boot_warning">If boost is active when you turn off your device, it may resume at the next startup. Tap Disable before turning off your device to prevent this.</string>
     <string name="wallpaper_colors">Use wallpaper colors</string>
-    <string name="limit">Gain limit: %1$d%%</string>
-    <string name="choose_limit">Gain limit</string>
-    <string name="limit_value">%1$d%%</string>
-    <string name="limit_warning">Gain above %1$d%% increases the risk of hearing and speaker damage. No level is guaranteed safe.</string>
+    <string name="gain_percent">%1$d%%</string>
     <string name="channel">Audio boost</string>
-    <string name="calibration_cap">The target stays at +25.87 dB from 80% to 100%.</string>
-    <string name="calibration_warning">The +%1$.2f dB target can make audio suddenly louder, distort playback, or damage hearing and speakers. Turn media volume down and remove headphones before continuing.</string>
 </resources>
