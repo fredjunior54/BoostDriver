@@ -1,27 +1,27 @@
 # BoostDriver
 
-Amplificador de áudio para Android 6.0 ou superior, inspirado no funcionamento do Volume Booster GOODEV. **Sem anúncios, telemetria ou acesso à internet.**
+Audio booster for Android 6.0 and later, inspired by Volume Booster GOODEV. Built with Kotlin, Jetpack Compose, and Material 3. **No ads, telemetry, or internet access.**
 
-## 🎚️ Como usar
+## 🎚️ How to use
 
-- **Volume de mídia** ajusta o volume do sistema. **Amplificação** aplica ganho adicional onde o Android oferece suporte.
-- Comece com volume baixo. **Parar**, no painel ou na notificação, desativa o efeito sem mudar o volume de mídia.
-- O limite padrão é 40%; as configurações permitem alterá-lo, mostrar ou esconder o volume de mídia e optar pela retomada após reiniciar.
+- **Media volume** changes the Android media volume. **Gain** applies extra amplification where the Android audio output supports it.
+- Start at a low volume. Tap **Stop** in the panel or notification to turn off amplification without changing media volume.
+- The default gain limit is 40%. In **Settings**, you can change the limit, hide the media volume control, enable wallpaper colors on Android 12 and later, or opt in to resuming an active boost after restart.
 
-**Risco:** ganho adicional pode distorcer o áudio e causar danos à audição ou ao equipamento. Nenhum percentual é garantido como seguro.
+**Warning:** Extra gain can distort audio, damage speakers, and harm your hearing. No setting is guaranteed safe.
 
-## 🔊 Compatibilidade e permissões
+## 🔊 Compatibility and permissions
 
-O app tenta `LoudnessEnhancer` e depois `Equalizer` no mix global. Essa sessão é legada: alguns aparelhos, players e saídas de áudio podem rejeitar ou ignorar o efeito. O estado ativo indica que o Android aceitou o efeito, não que o ganho foi ouvido em todos os apps. Não é um amplificador de chamadas ou alarmes.
+BoostDriver tries `LoudnessEnhancer` and then `Equalizer` on the global output mix. This is a legacy audio session. Some devices, players, and outputs may reject or ignore the effect. An active status means Android accepted the effect, not that every app is audibly louder. BoostDriver does not target calls or alarms.
 
-O serviço em primeiro plano mantém o ganho enquanto o painel está fechado. No Android 13+, a permissão de notificações permite mostrar o ganho e a ação **Parar** na gaveta. A permissão de inicialização é usada somente para retomar o ganho quando essa opção estiver habilitada.
+A foreground service keeps the boost active when you close the panel. On Android 13 and later, notification permission allows the status notification and its **Stop** action to appear in the notification shade. The boot permission is used for restoration only if you enable **Resume boost after restart**.
 
-## 🛠️ Compilação
+## 🛠️ Build
 
-Requer Android SDK 36 e JDK 17 ou mais recente compatível com o Gradle.
+Use JDK 21 and Android SDK 36.
 
 ```sh
-./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
+./gradlew detekt lint :app:testDebugUnitTest :app:assembleDebug
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
