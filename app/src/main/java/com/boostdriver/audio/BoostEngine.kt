@@ -4,7 +4,10 @@ import android.media.audiofx.AudioEffect
 import android.media.audiofx.Equalizer
 import android.media.audiofx.LoudnessEnhancer
 
-internal class BoostEngine(private val factory: (Int) -> Effect) : AutoCloseable {
+internal class BoostEngine(
+    private val diagnostic: ((String) -> Unit)? = null,
+    private val factory: (Int) -> Effect,
+) : AutoCloseable {
     interface Effect : AutoCloseable {
         fun apply(millibels: Int)
     }
@@ -12,8 +15,10 @@ internal class BoostEngine(private val factory: (Int) -> Effect) : AutoCloseable
     private var effect: Effect? = null
     private var kind = 0
 
-    fun apply(percent: Int): Int {
-        val gain = millibels(percent)
+    fun apply(percent: Int): Int = applyTarget(millibels(percent))
+
+    fun applyTarget(millibels: Int): Int {
+        val gain = millibels.coerceIn(0, MAX_CALIBRATION_MB)
         if (gain == 0) {
             close()
             return 0
@@ -24,7 +29,8 @@ internal class BoostEngine(private val factory: (Int) -> Effect) : AutoCloseable
                 current.apply(gain)
                 kind = next
                 return next
-            } catch (_: RuntimeException) {
+            } catch (failure: RuntimeException) {
+                diagnostic?.invoke("Effect backend=$next targetMb=$gain rejected: ${failure.javaClass.simpleName}")
                 close()
             }
         }
@@ -43,14 +49,25 @@ internal class BoostEngine(private val factory: (Int) -> Effect) : AutoCloseable
     }
 
     companion object {
+        private const val MAX_CALIBRATION_MB = 2250
+
         fun millibels(percent: Int): Int = percent.coerceIn(0, 60) * 750 / 100
 
         @Suppress("DEPRECATION") // Session zero is the legacy output mix.
-        fun platformEffect(kind: Int, session: Int, lostControl: () -> Unit): Effect {
+        fun platformEffect(
+            kind: Int,
+            session: Int,
+            diagnostic: ((String) -> Unit)? = null,
+            lostControl: () -> Unit,
+        ): Effect {
             val fx = if (kind == 1) LoudnessEnhancer(session) else Equalizer(0, session)
             try {
                 check(fx.hasControl() && !fx.enabled)
-                fx.setControlStatusListener { _, control -> if (!control) lostControl() }
+                diagnostic?.invoke("Created ${fx.descriptor.name} enabled=${fx.enabled} hasControl=${fx.hasControl()}")
+                fx.setControlStatusListener { _, control ->
+                    diagnostic?.invoke("Control changed: hasControl=$control")
+                    if (!control) lostControl()
+                }
             } catch (failure: RuntimeException) {
                 fx.release()
                 throw failure
@@ -58,10 +75,13 @@ internal class BoostEngine(private val factory: (Int) -> Effect) : AutoCloseable
             return object : Effect {
                 override fun apply(millibels: Int) {
                     check(fx.hasControl())
-                    when (fx) {
+                    val readback = when (fx) {
                         is LoudnessEnhancer -> {
                             fx.setTargetGain(millibels)
-                            check(fx.targetGain == millibels.toFloat())
+                            val target = fx.targetGain
+                            if (target != millibels.toFloat()) diagnostic?.invoke("Gain readback mismatch: requested=$millibels actual=$target")
+                            check(target == millibels.toFloat())
+                            target.toString()
                         }
                         is Equalizer -> {
                             val range = fx.bandLevelRange
@@ -69,9 +89,18 @@ internal class BoostEngine(private val factory: (Int) -> Effect) : AutoCloseable
                             check(range[1] > 0 && bands > 0)
                             val level = millibels.coerceIn(range[0].toInt(), range[1].toInt()).toShort()
                             repeat(bands) { fx.setBandLevel(it.toShort(), level) }
+                            if (diagnostic == null) "" else runCatching {
+                                List(bands) { fx.getBandLevel(it.toShort()) }.joinToString(",")
+                            }.getOrDefault("unavailable")
                         }
+                        else -> error("Unsupported effect backend")
                     }
-                    check(fx.setEnabled(true) == AudioEffect.SUCCESS && fx.enabled && fx.hasControl())
+                    val result = fx.setEnabled(true)
+                    diagnostic?.invoke(
+                        "Configured targetMb=$millibels readbackMb=$readback " +
+                            "enableResult=$result enabled=${fx.enabled} hasControl=${fx.hasControl()}",
+                    )
+                    check(result == AudioEffect.SUCCESS && fx.enabled && fx.hasControl())
                 }
 
                 override fun close() {

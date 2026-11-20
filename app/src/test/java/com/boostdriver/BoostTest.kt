@@ -53,6 +53,23 @@ class BoostTest {
         assertEquals(450, BoostEngine.millibels(100))
     }
 
+    @Test fun explicitCalibrationTargetIsBoundedAndDoesNotChangeTheSliderCurve() {
+        val targets = mutableListOf<Int>()
+        BoostEngine {
+            object : BoostEngine.Effect {
+                override fun apply(millibels: Int) { targets.add(millibels) }
+                override fun close() = Unit
+            }
+        }.use { engine ->
+            assertEquals(1, engine.apply(20))
+            assertEquals(1, engine.applyTarget(562))
+            assertEquals(1, engine.applyTarget(1125))
+            assertEquals(1, engine.applyTarget(Int.MAX_VALUE))
+            assertEquals(0, engine.applyTarget(-1))
+            assertEquals(listOf(150, 562, 1125, 2250), targets)
+        }
+    }
+
     @Test fun bootRequiresConsentAndRespectsLimit() {
         assertEquals(0, BoostPrefs.bootGain(false, true, 40, 40))
         assertEquals(0, BoostPrefs.bootGain(true, false, 40, 40))

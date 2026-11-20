@@ -141,8 +141,12 @@ class BoostService : Service() {
 
     private fun effectFor(session: Int): BoostEngine = effects.getOrPut(session) {
         lateinit var engine: BoostEngine
-        engine = BoostEngine { kind ->
-            BoostEngine.platformEffect(kind, session) {
+        val diagnostic: ((String) -> Unit)? =
+            if (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0) {
+                { message -> Log.d(TAG, "session=$session $message") }
+            } else null
+        engine = BoostEngine(diagnostic) { kind ->
+            BoostEngine.platformEffect(kind, session, diagnostic) {
                 main.post {
                     if (effects[session] === engine && requests.accepts(appliedGeneration)) {
                         finishBoost(R.string.status_error)
