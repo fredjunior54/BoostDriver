@@ -55,7 +55,7 @@ internal class BoostEngine(
         fun millibels(percent: Int): Int = targetFor(percent, BuildConfig.AUDIO_CALIBRATION)
 
         fun targetFor(percent: Int, calibration: Boolean): Int =
-            if (calibration) percent.coerceIn(0, 40) * 15 else percent.coerceIn(0, 60) * 750 / 100
+            if (calibration) percent.coerceIn(0, 40) * 30 else percent.coerceIn(0, 60) * 750 / 100
 
         @Suppress("DEPRECATION") // Session zero is the legacy output mix.
         fun platformEffect(

@@ -70,13 +70,13 @@ class BoostTest {
         }
     }
 
-    @Test fun calibrationTargetsAreMonotonicAndCappedAtSixDecibels() {
+    @Test fun calibrationTargetsAreMonotonicAndCappedAtTwelveDecibels() {
         val targets = (-1..61).map { BoostEngine.targetFor(it, calibration = true) }
         assertTrue(targets.zipWithNext().all { (previous, next) -> previous <= next })
         assertEquals(0, targets.first())
-        assertEquals(300, BoostEngine.targetFor(20, calibration = true))
-        assertEquals(600, BoostEngine.targetFor(40, calibration = true))
-        assertEquals(600, targets.last())
+        assertEquals(600, BoostEngine.targetFor(20, calibration = true))
+        assertEquals(1200, BoostEngine.targetFor(40, calibration = true))
+        assertEquals(1200, targets.last())
     }
 
     @Test fun bootRequiresConsentAndRespectsLimit() {
