@@ -1,13 +1,26 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose") version "2.2.20"
     id("io.gitlab.arturbosch.detekt") version "1.23.8"
 }
+val appVersion = Properties().apply {
+    providers.fileContents(rootProject.layout.projectDirectory.file("version.properties"))
+        .asText.get().reader().use { load(it) }
+}
+
 android {
     namespace = "com.boostdriver"
     compileSdk = 36
     buildFeatures { compose = true }
-    defaultConfig { applicationId = "com.boostdriver"; minSdk = 23; targetSdk = 36; versionCode = 1; versionName = "1.0" }
+    defaultConfig {
+        applicationId = "com.boostdriver"
+        minSdk = 23
+        targetSdk = 36
+        versionCode = appVersion.getProperty("versionCode").toInt()
+        versionName = appVersion.getProperty("versionName")
+    }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
 }
 
