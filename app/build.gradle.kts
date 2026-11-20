@@ -3,11 +3,17 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose") version "2.2.20"
     id("io.gitlab.arturbosch.detekt") version "1.23.8"
 }
+val audioCalibration = providers.gradleProperty("audioCalibration").map { it == "true" }.orElse(false)
+
 android {
     namespace = "com.boostdriver"
     compileSdk = 36
-    buildFeatures { compose = true }
+    buildFeatures { compose = true; buildConfig = true }
     defaultConfig { applicationId = "com.boostdriver"; minSdk = 23; targetSdk = 36; versionCode = 1; versionName = "1.0" }
+    buildTypes {
+        configureEach { buildConfigField("boolean", "AUDIO_CALIBRATION", "false") }
+        getByName("debug") { buildConfigField("boolean", "AUDIO_CALIBRATION", audioCalibration.get().toString()) }
+    }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
 }
 

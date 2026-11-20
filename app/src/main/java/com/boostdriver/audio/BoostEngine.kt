@@ -3,6 +3,7 @@ package com.boostdriver.audio
 import android.media.audiofx.AudioEffect
 import android.media.audiofx.Equalizer
 import android.media.audiofx.LoudnessEnhancer
+import com.boostdriver.BuildConfig
 
 internal class BoostEngine(
     private val diagnostic: ((String) -> Unit)? = null,
@@ -51,7 +52,10 @@ internal class BoostEngine(
     companion object {
         private const val MAX_CALIBRATION_MB = 2250
 
-        fun millibels(percent: Int): Int = percent.coerceIn(0, 60) * 750 / 100
+        fun millibels(percent: Int): Int = targetFor(percent, BuildConfig.AUDIO_CALIBRATION)
+
+        fun targetFor(percent: Int, calibration: Boolean): Int =
+            if (calibration) percent.coerceIn(0, 40) * 15 else percent.coerceIn(0, 60) * 750 / 100
 
         @Suppress("DEPRECATION") // Session zero is the legacy output mix.
         fun platformEffect(

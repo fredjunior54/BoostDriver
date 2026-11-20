@@ -6,7 +6,7 @@ import android.content.Intent
 
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action != Intent.ACTION_BOOT_COMPLETED) return
+        if (intent.action != Intent.ACTION_BOOT_COMPLETED || BuildConfig.AUDIO_CALIBRATION) return
         val prefs = BoostPrefs.get(context)
         val resume = prefs.getInt(BoostPrefs.RESUME, 0)
         val selected = BoostPrefs.selected(prefs)

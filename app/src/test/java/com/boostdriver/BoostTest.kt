@@ -48,9 +48,9 @@ class BoostTest {
     }
 
     @Test fun gainConversionIsBounded() {
-        assertEquals(0, BoostEngine.millibels(-10))
-        assertEquals(300, BoostEngine.millibels(40))
-        assertEquals(450, BoostEngine.millibels(100))
+        assertEquals(0, BoostEngine.targetFor(-10, calibration = false))
+        assertEquals(300, BoostEngine.targetFor(40, calibration = false))
+        assertEquals(450, BoostEngine.targetFor(100, calibration = false))
     }
 
     @Test fun explicitCalibrationTargetIsBoundedAndDoesNotChangeTheSliderCurve() {
@@ -61,13 +61,22 @@ class BoostTest {
                 override fun close() = Unit
             }
         }.use { engine ->
-            assertEquals(1, engine.apply(20))
+            assertEquals(1, engine.applyTarget(150))
             assertEquals(1, engine.applyTarget(562))
             assertEquals(1, engine.applyTarget(1125))
             assertEquals(1, engine.applyTarget(Int.MAX_VALUE))
             assertEquals(0, engine.applyTarget(-1))
             assertEquals(listOf(150, 562, 1125, 2250), targets)
         }
+    }
+
+    @Test fun calibrationTargetsAreMonotonicAndCappedAtSixDecibels() {
+        val targets = (-1..61).map { BoostEngine.targetFor(it, calibration = true) }
+        assertTrue(targets.zipWithNext().all { (previous, next) -> previous <= next })
+        assertEquals(0, targets.first())
+        assertEquals(300, BoostEngine.targetFor(20, calibration = true))
+        assertEquals(600, BoostEngine.targetFor(40, calibration = true))
+        assertEquals(600, targets.last())
     }
 
     @Test fun bootRequiresConsentAndRespectsLimit() {
@@ -88,7 +97,7 @@ class BoostTest {
                 override fun close() { calls[kind]++ }
             }
         }.use { engine ->
-            assertEquals(2, engine.apply(20))
+            assertEquals(2, engine.applyTarget(150))
             assertEquals(150, calls[0])
             assertEquals(1, calls[1])
             assertEquals(0, engine.apply(0))
