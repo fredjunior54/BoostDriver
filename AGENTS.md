@@ -29,3 +29,7 @@ At the end of every iteration that changes app sources, including tests, resourc
 4. Run `git push`. If it fails, report the error and stop; do not force-push.
 
 The bump script only updates the version file and the README version line. It does not stage, commit, push, or create a tag.
+
+## GitHub Releases
+
+A push to `main` that changes `version.properties` triggers the release workflow. It builds, signs, verifies, and publishes `BoostDriver-vX.Y.Z.apk` with its SHA-256 checksum. Do not push release tags by hand. Use the workflow dispatch on `main` only when a release needs to be retried. Keep the release signing key and its password out of Git; use the existing signing identity for all updates.

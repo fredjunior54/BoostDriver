@@ -1,0 +1,93 @@
+name: Publish Android release
+
+on:
+  push:
+    branches: [main]
+    paths: [version.properties]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install Android SDK packages
+        run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+      - name: Validate and build the release APK
+        run: |
+          ./scripts/bump-version.sh --check
+          ./gradlew --no-daemon detekt lint :app:testDebugUnitTest :app:assembleRelease
+      - name: Sign and verify the release APK
+        id: apk
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_RELEASE_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_RELEASE_KEYSTORE_PASSWORD }}
+          CERT_SHA256: ${{ vars.ANDROID_RELEASE_CERT_SHA256 }}
+        run: |
+          set -euo pipefail
+          : "${KEYSTORE_BASE64:?Release keystore secret is missing}"
+          : "${KEYSTORE_PASSWORD:?Release keystore password secret is missing}"
+          : "${CERT_SHA256:?Release certificate fingerprint is missing}"
+          version=$(sed -n 's/^versionName=//p' version.properties)
+          code=$(sed -n 's/^versionCode=//p' version.properties)
+          tag="v$version"
+          name="BoostDriver-$tag.apk"
+          tools="$ANDROID_HOME/build-tools/36.0.0"
+          unsigned=app/build/outputs/apk/release/app-release-unsigned.apk
+          umask 077
+          work=$(mktemp -d "$RUNNER_TEMP/boostdriver-signing.XXXXXX")
+          trap 'rm -f -- "$work/release.p12" "$work/aligned.apk"' EXIT
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$work/release.p12"
+          unset KEYSTORE_BASE64
+          "$tools/zipalign" -P 16 -f 4 "$unsigned" "$work/aligned.apk"
+          mkdir -p dist
+          "$tools/apksigner" sign --ks "$work/release.p12" --ks-key-alias boostdriver \
+            --ks-pass env:KEYSTORE_PASSWORD --v4-signing-enabled false \
+            --out "dist/$name" "$work/aligned.apk"
+          actual=$("$tools/apksigner" verify --print-certs "dist/$name" |
+            sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
+          [[ "${actual,,}" == "${CERT_SHA256,,}" ]]
+          "$tools/zipalign" -c -P 16 4 "dist/$name"
+          "$tools/aapt" dump badging "dist/$name" > "$work/badging.txt"
+          grep -F "package: name='com.boostdriver' versionCode='$code' versionName='$version'" "$work/badging.txt"
+          if grep -q '^application-debuggable' "$work/badging.txt"; then
+            echo 'Refusing to publish a debuggable APK.' >&2
+            exit 1
+          fi
+          (cd dist && sha256sum "$name" > "$name.sha256")
+          printf 'tag=%s\nname=%s\n' "$tag" "$name" >> "$GITHUB_OUTPUT"
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.apk.outputs.tag }}
+          APK_NAME: ${{ steps.apk.outputs.name }}
+        run: |
+          set -euo pipefail
+          refs=$(git ls-remote origin "refs/tags/$TAG" "refs/tags/$TAG^{}")
+          if [[ -n "$refs" ]]; then
+            target=$(awk 'END {print $1}' <<< "$refs")
+            if [[ "$target" != "$GITHUB_SHA" ]]; then
+              echo "Tag $TAG belongs to another commit; refusing to publish." >&2
+              exit 1
+            fi
+          fi
+          if gh release view "$TAG" --json isDraft,assets --jq \
+            '.isDraft == false and ([.assets[].name] | sort == ([env.APK_NAME,env.APK_NAME+".sha256"] | sort))' \
+            | grep -Fxq true; then
+            echo "Release $TAG is already published."
+            exit 0
+          fi
+          gh release create "$TAG" "dist/$APK_NAME" "dist/$APK_NAME.sha256" \
+            --target "$GITHUB_SHA" --title "BoostDriver $TAG" --generate-notes

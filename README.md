@@ -5,7 +5,7 @@
 <h1 align="center">BoostDriver</h1>
 
 <!-- app-version -->
-<p align="center"><strong>Version:</strong> v1.0.3</p>
+<p align="center"><strong>Version:</strong> v1.0.4</p>
 <!-- /app-version -->
 
 <p align="center">
@@ -26,9 +26,11 @@ The full-screen interface keeps both controls visible and follows the system lig
 - Start at a low volume. Tap **Enable** to apply your selected gain. Tap **Disable** in the panel or notification to turn off amplification without changing the saved gain or media volume.
 - The first launch shows 20% gain with boost off. The displayed dB value is the requested target, not a measurement. The slider ranges from 0% to 100%; the target levels off at +25.87 dB from 80% onward. The app remembers your selection, including 0%, and the boost does not start automatically after a restart.
 
-## 📦 Distribution
+## 📦 Download
 
-BoostDriver has been submitted to the official F-Droid catalog and is not yet available there. Follow the [F-Droid packaging merge request](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/58349) for updates.
+Download the signed `BoostDriver-vX.Y.Z.apk` from the [latest GitHub release](https://github.com/fredjunior54/BoostDriver/releases/latest). Select the APK under **Assets**, not the source archive. A SHA-256 checksum is available alongside the APK.
+
+If you installed a debug build, uninstall it before installing the release APK. Android cannot update an app signed with a different key, and uninstalling clears its saved preferences.
 
 ## 🔊 Compatibility and permissions
 
