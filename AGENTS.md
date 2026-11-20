@@ -33,3 +33,9 @@ The bump script only updates the version file and the README version line. It do
 ## GitHub Releases
 
 A push to `main` that changes `version.properties` triggers the release workflow. It builds, signs, verifies, and publishes `BoostDriver-vX.Y.Z.apk` with its SHA-256 checksum. Do not push release tags by hand. Use the workflow dispatch on `main` only when a release needs to be retried. Keep the release signing key and its password out of Git; use the existing signing identity for all updates.
+
+### Local release signing
+
+For local signing on `shadowBox`, use the existing BoostDriver keystore at `/home/antrax/ansible-Arch-Linux/android-signing/release.p12` (alias `boostdriver`). The password file is `release-password` in the same directory. Read the password directly from that file without printing it. Never copy either file into this repository or include it in logs or release assets.
+
+This path is for local signing only. GitHub Actions uses repository secrets, and the version bump script does not read signing files.
