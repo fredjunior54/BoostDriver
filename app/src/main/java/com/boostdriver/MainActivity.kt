@@ -27,9 +27,6 @@ class MainActivity : ComponentActivity() {
     private val audio by lazy { getSystemService(AudioManager::class.java) }
     private var media by mutableStateOf(MediaVolume())
     private var notificationsEnabled by mutableStateOf(true)
-    private var showVolume by mutableStateOf(true)
-    private var resumeOnBoot by mutableStateOf(false)
-    private var wallpaperColors by mutableStateOf(false)
     private var selectedGain by mutableStateOf(BoostPrefs.DEFAULT_GAIN)
     private val askNotifications = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
         refreshNotifications()
@@ -39,9 +36,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         volumeControlStream = AudioManager.STREAM_MUSIC
-        showVolume = prefs.getBoolean(BoostPrefs.VOLUME, true)
-        resumeOnBoot = prefs.getBoolean(BoostPrefs.BOOT, false)
-        wallpaperColors = prefs.getBoolean(BoostPrefs.WALLPAPER, false)
         selectedGain = BoostPrefs.selected(prefs)
         refreshVolume()
         refreshNotifications()
@@ -55,20 +49,14 @@ class MainActivity : ComponentActivity() {
         }
         setContent {
             val status by BoostService.status.collectAsStateWithLifecycle()
-            BoostDriverTheme(useWallpaperColors = wallpaperColors) {
+            BoostDriverTheme {
                 BoostPanel(
-                    media = media, status = status, selectedGain = selectedGain, showVolume = showVolume,
-                    resumeOnBoot = resumeOnBoot, wallpaperColors = wallpaperColors,
-                    supportsWallpaperColors = Build.VERSION.SDK_INT >= 31,
+                    media = media, status = status, selectedGain = selectedGain,
                     notificationsEnabled = notificationsEnabled,
-                    onDismiss = ::finish,
                     onMediaVolume = ::setMediaVolume,
                     onGain = ::saveGain,
                     onEnable = ::enableBoost,
-                    onDisable = { BoostService.disable(this) },
-                    onShowVolume = { showVolume = it; save(BoostPrefs.VOLUME, it) },
-                    onResumeOnBoot = { resumeOnBoot = it; save(BoostPrefs.BOOT, it) },
-                    onWallpaperColors = { wallpaperColors = it; save(BoostPrefs.WALLPAPER, it) },
+                    onDisable = BoostService::disable,
                 )
             }
         }

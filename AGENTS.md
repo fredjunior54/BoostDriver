@@ -15,9 +15,9 @@ Before implementing or modifying any Jetpack Compose UI:
 
 At the end of every iteration that changes app sources, including tests, resources, the manifest, or build configuration, even for a one-line change:
 
-1. Run `./scripts/bump-version.sh` once. It increments the SemVer patch and Android `versionCode` together. Do not bump for documentation-only iterations or rerun the bump to retry a failing check.
-2. Run the project checks against the bumped version. Check `git status --short`, then stage only the files changed for this iteration, including `version.properties`.
+1. Run `./scripts/bump-version.sh` once. It increments the SemVer patch and Android `versionCode` together and synchronizes the generated version line in `README.md`. Do not bump for documentation-only iterations or rerun the bump to retry a failing check.
+2. Run `./scripts/bump-version.sh --check` and the project checks against the bumped version. Check `git status --short`, then stage only the files changed for this iteration, including `version.properties` and `README.md`.
 3. Commit the changes and the bump together. Use a Conventional Commit subject in American English that describes the actual change, not just the bump.
 4. Run `git push`. If it fails, report the error and stop; do not force-push.
 
-The bump script only updates the version file. It does not stage, commit, push, or create a tag.
+The bump script only updates the version file and the README version line. It does not stage, commit, push, or create a tag.

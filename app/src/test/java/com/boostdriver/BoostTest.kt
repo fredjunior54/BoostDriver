@@ -81,13 +81,6 @@ class BoostTest {
         assertEquals(2587, targets.last())
     }
 
-    @Test fun bootRequiresOptInAndANewlyArmedGain() {
-        assertEquals(0, BoostPrefs.bootGain(false, 40, 40))
-        assertEquals(0, BoostPrefs.bootGain(true, 0, 80))
-        assertEquals(0, BoostPrefs.bootGain(true, 40, 0))
-        assertEquals(80, BoostPrefs.bootGain(true, 80, 80))
-    }
-
     @Test fun fallbackAndZeroReleaseBothEffects() {
         val calls = IntArray(3)
         BoostEngine { kind ->

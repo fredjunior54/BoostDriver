@@ -78,7 +78,7 @@ class BoostService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == DISABLE) {
-            disable(this)
+            disable()
             if (!foreground) stopSelf(startId)
             return START_NOT_STICKY
         }
@@ -184,9 +184,6 @@ class BoostService : Service() {
         if (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0) {
             Log.d(TAG, "Configured gain=${BoostEngine.millibels(gain)} mB backend=$mode scope=$scoped")
         }
-        val prefs = BoostPrefs.get(this)
-        if (gain > 0) prefs.edit().putInt(BoostPrefs.RESUME, gain).apply()
-        else prefs.edit().remove(BoostPrefs.RESUME).apply()
         state.value = Status(gain = gain, mode = mode, enabled = true, scoped = scoped)
         notifications.notify(ID, notification())
     }
@@ -216,7 +213,6 @@ class BoostService : Service() {
 
     private fun finishBoost(error: Int = 0) {
         requests.disable()
-        BoostPrefs.get(this).edit().remove(BoostPrefs.RESUME).apply()
         release()
         state.value = Status(error = error)
         stopSelf()
@@ -271,9 +267,8 @@ class BoostService : Service() {
             requests.update()?.let { send(context, gain, it) }
         }
 
-        fun disable(context: Context) {
+        fun disable() {
             requests.disable()
-            BoostPrefs.get(context).edit().remove(BoostPrefs.RESUME).apply()
             // Let a queued foreground start promote and stop itself if not yet promoted.
             active?.takeIf { it.foreground }?.finishBoost()
             state.value = Status()
@@ -284,14 +279,14 @@ class BoostService : Service() {
             try {
                 if (Build.VERSION.SDK_INT >= 26) context.startForegroundService(intent) else context.startService(intent)
             } catch (_: IllegalStateException) {
-                failStart(context)
+                failStart()
             } catch (_: SecurityException) {
-                failStart(context)
+                failStart()
             }
         }
 
-        private fun failStart(context: Context) {
-            disable(context)
+        private fun failStart() {
+            disable()
             state.value = Status(error = R.string.status_start_error)
         }
     }

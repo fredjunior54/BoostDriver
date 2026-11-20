@@ -13,7 +13,7 @@ val appVersion = Properties().apply {
 android {
     namespace = "com.boostdriver"
     compileSdk = 36
-    buildFeatures { compose = true }
+    buildFeatures { compose = true; buildConfig = true }
     defaultConfig {
         applicationId = "com.boostdriver"
         minSdk = 23
