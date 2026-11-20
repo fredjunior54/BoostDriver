@@ -30,6 +30,7 @@ class MainActivity : ComponentActivity() {
     private var showVolume by mutableStateOf(true)
     private var resumeOnBoot by mutableStateOf(false)
     private var wallpaperColors by mutableStateOf(false)
+    private var selectedGain by mutableStateOf(BoostPrefs.DEFAULT_GAIN)
     private var limit by mutableStateOf(40)
     private val askNotifications = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
         refreshNotifications()
@@ -43,6 +44,7 @@ class MainActivity : ComponentActivity() {
         resumeOnBoot = prefs.getBoolean(BoostPrefs.BOOT, false)
         wallpaperColors = prefs.getBoolean(BoostPrefs.WALLPAPER, false)
         limit = BoostPrefs.limit(prefs)
+        selectedGain = BoostPrefs.selected(prefs)
         refreshVolume()
         refreshNotifications()
         lifecycleScope.launch {
@@ -57,17 +59,19 @@ class MainActivity : ComponentActivity() {
             val status by BoostService.status.collectAsStateWithLifecycle()
             BoostDriverTheme(useWallpaperColors = wallpaperColors) {
                 BoostPanel(
-                    media = media, status = status, limit = limit, showVolume = showVolume,
+                    media = media, status = status, limit = limit, selectedGain = selectedGain, showVolume = showVolume,
                     resumeOnBoot = resumeOnBoot, wallpaperColors = wallpaperColors,
                     supportsWallpaperColors = Build.VERSION.SDK_INT >= 31,
                     notificationsEnabled = notificationsEnabled,
                     hasAcceptedWarning = { prefs.getBoolean(BoostPrefs.ACCEPTED, false) },
                     onDismiss = ::finish,
                     onMediaVolume = ::setMediaVolume,
-                    onGain = { BoostService.request(this, it) },
-                    onWarningAccepted = { gain ->
+                    onGain = ::saveGain,
+                    onEnable = { BoostService.enable(this, selectedGain) },
+                    onDisable = { BoostService.disable(this) },
+                    onWarningAccepted = {
                         prefs.edit().putBoolean(BoostPrefs.ACCEPTED, true).apply()
-                        BoostService.request(this, gain)
+                        BoostService.enable(this, selectedGain)
                         if (Build.VERSION.SDK_INT >= 33 && !notificationsEnabled) {
                             askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
                         }
@@ -91,7 +95,13 @@ class MainActivity : ComponentActivity() {
     private fun updateLimit(value: Int) {
         prefs.edit().putInt(BoostPrefs.LIMIT, value).apply()
         limit = value
-        if (BoostService.status.value.gain > value) BoostService.request(this, value)
+        if (selectedGain > value) saveGain(value)
+    }
+
+    private fun saveGain(value: Int) {
+        selectedGain = value.coerceIn(0, limit)
+        prefs.edit().putInt(BoostPrefs.SELECTION, selectedGain).apply()
+        BoostService.update(this, selectedGain)
     }
 
     private fun setMediaVolume(value: Int) {

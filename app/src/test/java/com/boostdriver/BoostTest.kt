@@ -1,10 +1,52 @@
 package com.boostdriver
 
 import com.boostdriver.audio.BoostEngine
+import com.boostdriver.audio.PlaybackSessions
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class BoostTest {
+    @Test fun selectionDefaultsToTwentyAndPreservesExplicitZero() {
+        assertEquals(20, BoostPrefs.resolveSelection(null, 0, 40))
+        assertEquals(30, BoostPrefs.resolveSelection(null, 30, 40))
+        assertEquals(0, BoostPrefs.resolveSelection(0, 30, 40))
+        assertEquals(10, BoostPrefs.resolveSelection(40, 0, 10))
+        assertEquals(10, BoostPrefs.resolveSelection(null, 0, 10))
+    }
+
+    @Test fun disabledChangesDoNotStartAndStaleRequestsCannotEnable() {
+        val requests = BoostRequests()
+        assertNull(requests.update())
+        assertNull(requests.enable(0))
+        val first = requireNotNull(requests.enable(20))
+        assertTrue(requests.accepts(first))
+        val update = requireNotNull(requests.update())
+        assertFalse(requests.accepts(first))
+        requests.disable()
+        assertFalse(requests.accepts(update))
+        val second = requireNotNull(requests.enable(20))
+        assertTrue(requests.accepts(second))
+        assertFalse(requests.accepts(first))
+    }
+
+    @Test fun announcedSessionsAreBoundedAndCloseRequiresMatchingOpen() {
+        val sessions = PlaybackSessions(capacity = 2)
+        assertFalse(sessions.open(0, "test.player"))
+        assertFalse(sessions.open(42, null))
+        assertTrue(sessions.open(42, "test.player"))
+        assertFalse(sessions.open(42, "another.player"))
+        assertTrue(sessions.open(43, "another.player"))
+        assertFalse(sessions.open(44, "third.player"))
+        assertFalse(sessions.close(42, "another.player"))
+        assertTrue(sessions.close(42, "test.player"))
+        assertEquals(setOf(43), sessions.ids)
+        sessions.clear()
+        assertTrue(sessions.ids.isEmpty())
+    }
+
     @Test fun gainConversionIsBounded() {
         assertEquals(0, BoostEngine.millibels(-10))
         assertEquals(300, BoostEngine.millibels(40))

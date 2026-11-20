@@ -5,16 +5,16 @@ Audio booster for Android 6.0 and later, inspired by Volume Booster GOODEV. Buil
 ## 🎚️ How to use
 
 - **Media volume** changes the Android media volume. **Gain** applies extra amplification where the Android audio output supports it.
-- Start at a low volume. Tap **Stop** in the panel or notification to turn off amplification without changing media volume.
-- The default gain limit is 40%. In **Settings**, you can change the limit, hide the media volume control, enable wallpaper colors on Android 12 and later, or opt in to resuming an active boost after restart.
+- Start at a low volume. Tap **Enable** to apply your selected gain. Tap **Disable** in the panel or notification to turn off amplification without changing the saved gain or media volume.
+- The first launch shows 20% gain with boost off. The displayed dB value is the requested target, not a measurement. The default gain limit is 40%. In **Settings**, you can change the limit, hide the media volume control, enable wallpaper colors on Android 12 and later, or opt in to resuming an active boost after restart.
 
 **Warning:** Extra gain can distort audio, damage speakers, and harm your hearing. No setting is guaranteed safe.
 
 ## 🔊 Compatibility and permissions
 
-BoostDriver tries `LoudnessEnhancer` and then `Equalizer` on the global output mix. This is a legacy audio session. Some devices, players, and outputs may reject or ignore the effect. An active status means Android accepted the effect, not that every app is audibly louder. BoostDriver does not target calls or alarms.
+BoostDriver tries `LoudnessEnhancer` and then `Equalizer` on audio sessions announced by compatible players. Enable boost before starting or restarting playback so BoostDriver can receive the announcement. If none of the announced sessions accepts the effect, the app tries the legacy global mix. Some devices, players, and outputs bypass that mix even when Android accepts the effect. A configured status means Android accepted the effect, not that every app is audibly louder. BoostDriver does not target calls or alarms.
 
-A foreground service keeps the boost active when you close the panel. On Android 13 and later, notification permission allows the status notification and its **Stop** action to appear in the notification shade. The boot permission is used for restoration only if you enable **Resume boost after restart**.
+A foreground service keeps the boost active when you close the panel. On Android 13 and later, notification permission allows the status notification and its **Disable** action to appear in the notification shade. The boot permission is used for restoration only if you enable **Resume boost after restart**.
 
 ## 🛠️ Build
 

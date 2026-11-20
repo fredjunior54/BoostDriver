@@ -8,12 +8,14 @@ class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != Intent.ACTION_BOOT_COMPLETED) return
         val prefs = BoostPrefs.get(context)
+        val resume = prefs.getInt(BoostPrefs.RESUME, 0)
+        val selected = BoostPrefs.selected(prefs)
         val gain = BoostPrefs.bootGain(
             prefs.getBoolean(BoostPrefs.ACCEPTED, false),
             prefs.getBoolean(BoostPrefs.BOOT, false),
-            prefs.getInt(BoostPrefs.RESUME, 0),
+            if (resume > 0) selected else 0,
             BoostPrefs.limit(prefs),
         )
-        if (gain > 0) BoostService.request(context, gain)
+        if (gain > 0) BoostService.enable(context, gain)
     }
 }

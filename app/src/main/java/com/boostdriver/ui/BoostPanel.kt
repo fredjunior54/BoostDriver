@@ -40,6 +40,7 @@ import androidx.compose.ui.semantics.stateDescription
 import com.boostdriver.BoostService
 import com.boostdriver.R
 import com.boostdriver.ui.theme.spacing
+import com.boostdriver.audio.BoostEngine
 import kotlin.math.roundToInt
 
 internal data class MediaVolume(val min: Int = 0, val max: Int = 0, val current: Int = 0)
@@ -51,6 +52,7 @@ internal fun BoostPanel(
     media: MediaVolume,
     status: BoostService.Status,
     limit: Int,
+    selectedGain: Int,
     showVolume: Boolean,
     resumeOnBoot: Boolean,
     wallpaperColors: Boolean,
@@ -60,7 +62,9 @@ internal fun BoostPanel(
     onDismiss: () -> Unit,
     onMediaVolume: (Int) -> Unit,
     onGain: (Int) -> Unit,
-    onWarningAccepted: (Int) -> Unit,
+    onEnable: () -> Unit,
+    onDisable: () -> Unit,
+    onWarningAccepted: () -> Unit,
     onShowVolume: (Boolean) -> Unit,
     onResumeOnBoot: (Boolean) -> Unit,
     onWallpaperColors: (Boolean) -> Unit,
@@ -68,7 +72,6 @@ internal fun BoostPanel(
 ) {
     var dialog by rememberSaveable { mutableStateOf(Dialog.None) }
     var proposedGain by rememberSaveable { mutableStateOf<Float?>(null) }
-    var pendingGain by rememberSaveable { mutableStateOf(0) }
     var pendingLimit by rememberSaveable { mutableStateOf(limit) }
     val spacing = MaterialTheme.spacing
     ModalBottomSheet(
@@ -89,26 +92,27 @@ internal fun BoostPanel(
                 AudioSlider(R.string.volume_label, percent, media.current.toFloat(), media.min..media.max,
                     onValueChange = { if (it.roundToInt() != media.current) onMediaVolume(it.roundToInt()) })
             }
-            val currentGain = (proposedGain ?: status.gain.toFloat()).coerceIn(0f, limit.toFloat())
-            ControlLabel(R.string.gain, currentGain.roundToInt())
+            val currentGain = (proposedGain ?: selectedGain.toFloat()).coerceIn(0f, limit.toFloat())
+            val db = BoostEngine.millibels(currentGain.roundToInt()) / 100f
+            Text(stringResource(R.string.gain_target, currentGain.roundToInt(), db), style = MaterialTheme.typography.titleMedium)
             AudioSlider(R.string.gain_label, currentGain.roundToInt(), currentGain, 0..limit,
                 onValueChange = { proposedGain = it },
                 onFinished = {
-                    val gain = proposedGain?.roundToInt() ?: status.gain
+                    val gain = proposedGain?.roundToInt() ?: selectedGain
                     proposedGain = null
-                    if (gain > 0 && !hasAcceptedWarning()) {
-                        pendingGain = gain
-                        dialog = Dialog.Warning
-                    } else onGain(gain)
+                    onGain(gain)
                 })
             val message = when {
                 status.error != 0 -> stringResource(status.error)
-                status.gain == 0 -> stringResource(R.string.status_off)
-                else -> stringResource(R.string.status_on, if (status.mode == 1) "LoudnessEnhancer" else "Equalizer")
+                status.starting -> stringResource(R.string.status_starting)
+                !status.enabled -> stringResource(R.string.status_off)
+                status.gain == 0 -> stringResource(R.string.status_bypass)
+                else -> stringResource(if (status.scoped) R.string.status_session else R.string.status_on,
+                    if (status.mode == 1) "LoudnessEnhancer" else "Equalizer")
             }
             Text(message, Modifier.semantics { liveRegion = LiveRegionMode.Polite },
                 color = if (status.error != 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
-            if (status.gain > 0 && !notificationsEnabled) Text(stringResource(R.string.status_no_notification))
+            if (status.enabled && !notificationsEnabled) Text(stringResource(R.string.status_no_notification))
             Row(
                 Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(spacing.small, Alignment.End),
                 verticalAlignment = Alignment.CenterVertically,
@@ -116,15 +120,25 @@ internal fun BoostPanel(
                 TextButton(onClick = { dialog = Dialog.Settings }, modifier = Modifier.weight(1f)) {
                     Text(stringResource(R.string.settings))
                 }
-                Button(onClick = { proposedGain = null; onGain(0) }, enabled = status.gain > 0 || status.error != 0,
-                    modifier = Modifier.weight(1f)) { Text(stringResource(R.string.stop)) }
+                val canDisable = status.enabled || status.starting
+                Button(
+                    onClick = {
+                        when {
+                            canDisable -> onDisable()
+                            hasAcceptedWarning() -> onEnable()
+                            else -> dialog = Dialog.Warning
+                        }
+                    },
+                    enabled = canDisable || selectedGain > 0,
+                    modifier = Modifier.weight(1f),
+                ) { Text(stringResource(if (canDisable) R.string.disable else R.string.enable)) }
             }
         }
 
         when (dialog) {
             Dialog.None -> Unit
             Dialog.Warning -> ConfirmDialog(R.string.warning_title, stringResource(R.string.warning),
-                onCancel = { dialog = Dialog.None }, onConfirm = { dialog = Dialog.None; onWarningAccepted(pendingGain) })
+                onCancel = { dialog = Dialog.None }, onConfirm = { dialog = Dialog.None; onWarningAccepted() })
             Dialog.Boot -> ConfirmDialog(R.string.boot, stringResource(R.string.boot_warning),
                 onCancel = { dialog = Dialog.Settings }, onConfirm = { onResumeOnBoot(true); dialog = Dialog.Settings })
             Dialog.HigherLimit -> ConfirmDialog(R.string.warning_title, stringResource(R.string.limit_warning, 40),

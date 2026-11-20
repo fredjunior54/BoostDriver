@@ -46,8 +46,8 @@ internal class BoostEngine(private val factory: (Int) -> Effect) : AutoCloseable
         fun millibels(percent: Int): Int = percent.coerceIn(0, 60) * 750 / 100
 
         @Suppress("DEPRECATION") // Session zero is the legacy output mix.
-        fun platformEffect(kind: Int, lostControl: () -> Unit): Effect {
-            val fx = if (kind == 1) LoudnessEnhancer(0) else Equalizer(0, 0)
+        fun platformEffect(kind: Int, session: Int, lostControl: () -> Unit): Effect {
+            val fx = if (kind == 1) LoudnessEnhancer(session) else Equalizer(0, session)
             try {
                 check(fx.hasControl() && !fx.enabled)
                 fx.setControlStatusListener { _, control -> if (!control) lostControl() }
@@ -59,7 +59,10 @@ internal class BoostEngine(private val factory: (Int) -> Effect) : AutoCloseable
                 override fun apply(millibels: Int) {
                     check(fx.hasControl())
                     when (fx) {
-                        is LoudnessEnhancer -> fx.setTargetGain(millibels)
+                        is LoudnessEnhancer -> {
+                            fx.setTargetGain(millibels)
+                            check(fx.targetGain == millibels.toFloat())
+                        }
                         is Equalizer -> {
                             val range = fx.bandLevelRange
                             val bands = fx.numberOfBands.toInt()
@@ -68,7 +71,7 @@ internal class BoostEngine(private val factory: (Int) -> Effect) : AutoCloseable
                             repeat(bands) { fx.setBandLevel(it.toShort(), level) }
                         }
                     }
-                    check(fx.setEnabled(true) == AudioEffect.SUCCESS)
+                    check(fx.setEnabled(true) == AudioEffect.SUCCESS && fx.enabled && fx.hasControl())
                 }
 
                 override fun close() {
