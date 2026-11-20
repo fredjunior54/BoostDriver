@@ -1,0 +1,3 @@
+BoostDriver puts Android media volume and additional gain on one screen. It remembers your gain selection but starts with boost off. Use the Disable button in the app or, when notifications are allowed, in the notification shade to stop boosting without changing your saved gain.
+
+BoostDriver runs on Android 6.0 and later. It has no ads, analytics, or internet permission. Boost support varies by device, player, and audio output. The gain shown is a requested target, not a measurement. Start at a low volume.
