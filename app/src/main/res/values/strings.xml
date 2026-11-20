@@ -1,0 +1,23 @@
+<resources>
+    <string name="app_name">BoostDriver</string>
+    <string name="volume">Volume de mídia: %1$d%%</string>
+    <string name="gain">Amplificação: %1$d%%</string>
+    <string name="status_off">Amplificação desligada</string>
+    <string name="status_on">Efeito ativo • %1$s</string>
+    <string name="status_error">Não foi possível aplicar o efeito nesta saída de áudio.</string>
+    <string name="status_start_error">O Android não permitiu iniciar a amplificação.</string>
+    <string name="status_no_notification">Notificações desativadas. Para desligar o efeito, volte a este painel.</string>
+    <string name="stop">Parar</string>
+    <string name="settings">Configurações</string>
+    <string name="warning_title">Proteja sua audição</string>
+    <string name="warning">Volumes altos podem causar perda auditiva e danificar alto-falantes. Comece com volume baixo. Mesmo um ganho pequeno pode causar distorção.</string>
+    <string name="accept">Entendi</string>
+    <string name="show_volume">Mostrar volume de mídia</string>
+    <string name="boot">Retomar amplificação após reiniciar</string>
+    <string name="boot_warning">Se o efeito estiver ativo ao desligar o aparelho, ele poderá voltar após a próxima inicialização. Use Parar para desarmar a retomada.</string>
+    <string name="limit">Limite: %1$d%%</string>
+    <string name="choose_limit">Limite de amplificação</string>
+    <string name="limit_value">%1$d%%</string>
+    <string name="limit_warning">Ganhos acima de %1$d%% aumentam o risco. Nenhum nível é garantido como seguro. Quer ampliar o limite?</string>
+    <string name="channel">Amplificação de áudio</string>
+</resources>
